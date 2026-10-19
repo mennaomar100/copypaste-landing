@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CopyPaste — The Game</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-muted-slate: #768E99;
+      --color-light-blue:  #90A8B4;
+      --color-deep-teal:   #1F5E80;
+      --color-near-black:  #0B1215;
+      --color-dark-slate:  #3A5661;
+      --color-very-dark:   #1D2A30;
+      
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-main: 'Rajdhani', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--color-near-black);
+      font-family: var(--font-main);
+      color: #ffffff;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0B1215 0%, #1D2A30 50%, #0B1215 100%);
+      background-size: 200% 200%;
+      animation: ambientBg 12s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    @keyframes ambientBg {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(118, 142, 153, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(118, 142, 153, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        rgba(11, 18, 21, 0) 50%, 
+        rgba(0, 0, 0, 0.35) 50%
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.8;
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, transparent 55%, rgba(11, 18, 21, 0.9) 100%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      height: 100dvh;
+      padding: env(safe-area-inset-top, 24px) 24px env(safe-area-inset-bottom, 24px) 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .frame-corner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--color-muted-slate);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+    .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+    .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+    .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+    .screen {
+      position: absolute;
+      width: calc(100% - 48px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.97) translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .screen.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    .screen.exit {
+      opacity: 0;
+      transform: scale(1.03) translateY(-12px);
+      pointer-events: none;
+    }
+
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .reveal-item.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .game-title {
+      font-family: var(--font-pixel);
+      font-size: 2.2rem;
+      color: #ffffff;
+      text-shadow: 
+        3px 3px 0px var(--color-deep-teal),
+        -1px -1px 0px var(--color-light-blue);
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .sub-tagline {
+      font-size: 1.25rem;
+      color: var(--color-light-blue);
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .impact-text {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .highlight-blue {
+      color: var(--color-light-blue);
+      text-shadow: 0 0 10px rgba(144, 168, 180, 0.4);
+    }
+
+    .highlight-teal {
+      color: var(--color-deep-teal);
+    }
+
+    .mechanic-box {
+      font-family: var(--font-pixel);
+      font-size: 1.1rem;
+      padding: 16px 24px;
+      background: rgba(29, 42, 48, 0.85);
+      border: 2px solid var(--color-light-blue);
+      box-shadow: 0 0 15px rgba(31, 94, 128, 0.3);
+      color: #ffffff;
+      margin: 8px 0;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .achievement-card {
+      background: rgba(29, 42, 48, 0.9);
+      border: 2px solid var(--color-light-blue);
+      box-shadow: inset 0 0 12px rgba(144, 168, 180, 0.2), 0 0 20px rgba(31, 94, 128, 0.4);
+      padding: 24px 20px;
+      width: 100%;
+      margin-bottom: 24px;
+      position: relative;
+      clip-path: polygon(
+        0 8px, 8px 0, 
+        calc(100% - 8px) 0, 100% 8px, 
+        100% calc(100% - 8px), calc(100% - 8px) 100%, 
+        8px 100%, 0 calc(100% - 8px)
+      );
+    }
+
+    .trophy-icon {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      display: inline-block;
+      filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+    }
+
+    .badge-title {
+      font-family: var(--font-pixel);
+      font-size: 0.85rem;
+      color: var(--color-light-blue);
+      margin-bottom: 8px;
+    }
+
+    .badge-subtitle {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .form-group {
+      width: 100%;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pixel-input {
+      width: 100%;
+      background: rgba(11, 18, 21, 0.95);
+      border: 2px solid var(--color-muted-slate);
+      color: #ffffff;
+      font-family: var(--font-main);
+      font-size: 18px;
+      font-weight: 600;
+      padding: 16px;
+      outline: none;
+      transition: all 0.3s ease;
+      clip-path: polygon(
+        0 6px, 6px 0, 
+        calc(100% - 6px) 0, 100% 6px, 
+        100% calc(100% - 6px), calc(100% - 6px) 100%, 
+        6px 100%, 0 calc(100% - 6px)
+      );
+      user-select: text;
+    }
+
+    .pixel-input:focus {
+      border-color: var(--color-light-blue);
+      box-shadow: 0 0 12px rgba(144, 168, 180, 0.4);
+      background: rgba(29, 42, 48, 0.6);
+    }
+
+    .pixel-input::placeholder {
+      color: var(--color-muted-slate);
+      font-weight: 500;
+    }
+
+    .pixel-btn {
+      width: 100%;
+      background: var(--color-deep-teal);
+      color: #ffffff;
+      border: none;
+      font-family: var(--font-pixel);
+      font-size: 0.85rem;
+      padding: 18px 20px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      box-shadow: inset -4px -4px 0px rgba(0,0,0,0.4), inset 4px 4px 0px rgba(255,255,255,0.2);
+    }
+
+    .pixel-btn:active {
+      transform: translateY(2px);
+      box-shadow: inset -2px -2px 0px rgba(0,0,0,0.4), inset 2px 2px 0px rgba(255,255,255,0.2);
+      background: var(--color-dark-slate);
+    }
+
+    .pixel-btn-glow {
+      border: 1px solid var(--color-light-blue);
+      box-shadow: 0 0 15px rgba(31, 94, 128, 0.6);
+    }
+
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 0.95rem;
+      font-weight: 700;
+      height: 18px;
+      margin-top: -8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .error-msg.visible {
+      opacity: 1;
+    }
+
+    /* Skip Prompt Styling */
+    #skip-prompt {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-pixel);
+      font-size: 0.55rem;
+      color: var(--color-muted-slate);
+      letter-spacing: 1px;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.8;
+      animation: blinkSkip 1.5s infinite ease-in-out;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
+    }
+    #skip-prompt.hidden {
+      opacity: 0;
+    }
+
+    @keyframes blinkSkip {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.9; }
+    }
+
+    .glitch {
+      position: relative;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      clip: rect(0, 0, 0, 0);
+    }
+    .glitch::before {
+      left: -2px;
+      text-shadow: 2px 0 var(--color-deep-teal);
+      animation: glitch-anim 3s infinite linear alternate-reverse;
+    }
+    .glitch::after {
+      left: 2px;
+      text-shadow: -2px 0 var(--color-light-blue);
+      animation: glitch-anim2 2s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch-anim {
+      0% { clip: rect(12px, 9999px, 30px, 0); }
+      20% { clip: rect(40px, 9999px, 10px, 0); }
+      40% { clip: rect(25px, 9999px, 50px, 0); }
+      60% { clip: rect(5px, 9999px, 15px, 0); }
+      80% { clip: rect(35px, 9999px, 20px, 0); }
+      100% { clip: rect(18px, 9999px, 45px, 0); }
+    }
+    @keyframes glitch-anim2 {
+      0% { clip: rect(32px, 9999px, 5px, 0); }
+      25% { clip: rect(15px, 9999px, 35px, 0); }
+      50% { clip: rect(45px, 9999px, 12px, 0); }
+      75% { clip: rect(8px, 9999px, 28px, 0); }
+      100% { clip: rect(22px, 9999px, 40px, 0); }
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-light-blue);
+      border-radius: 50%;
+      margin-left: 6px;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- Skip Prompt Indicator -->
+  <div id="skip-prompt">[DOUBLE-TAP OR DOUBLE-CLICK TO SKIP]</div>
+
+  <main id="app">
+    <div class="frame-corner top-left"></div>
+    <div class="frame-corner top-right"></div>
+    <div class="frame-corner bottom-left"></div>
+    <div class="frame-corner bottom-right"></div>
+
+    <section class="screen" id="screen-1">
+      <h1 class="game-title glitch" data-text="COPYPASTE">COPYPASTE</h1>
+      <p class="sub-tagline reveal-item" id="s1-tagline">
+        Use it. Outsmart it. Never touch it.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-2">
+      <p class="impact-text reveal-item" id="s2-line1">
+        EVERY 10 SECONDS...
+      </p>
+      <p class="impact-text highlight-blue reveal-item" id="s2-line2" style="margin: 18px 0;">
+        A COPY OF YOU APPEARS.
+      </p>
+      <p class="impact-text reveal-item" id="s2-line3" style="font-size: 1.25rem; color: var(--color-muted-slate);">
+        AND DOES EXACTLY WHAT YOU DID BEFORE.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-3">
+      <div class="mechanic-box reveal-item" id="s3-box1">RECORD.</div>
+      <div class="mechanic-box reveal-item" id="s3-box2">REPLAY.</div>
+      <div class="mechanic-box reveal-item" id="s3-box3" style="border-color: var(--color-deep-teal);">ADAPT.</div>
+      <p class="reveal-item" id="s3-caption" style="margin-top: 20px; font-size: 1.25rem; font-weight: 700; color: var(--color-light-blue);">
+        Your past actions become part of the puzzle.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-4">
+      <div class="achievement-card reveal-item" id="s4-card">
+        <div class="trophy-icon">🏆</div>
+        <div class="badge-title">OFFICIAL SELECTION</div>
+        <div class="badge-subtitle">2ND PLACE WINNER</div>
+      </div>
+      <p class="reveal-item" id="s4-line1" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">
+        We built CopyPaste around this mechanic.
+      </p>
+      <p class="reveal-item highlight-blue" id="s4-line2" style="font-size: 1.1rem; font-weight: 700;">
+        12 levels. One very stubborn clone.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-5">
+      <p style="font-size: 1.1rem; color: var(--color-muted-slate); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Want to know when CopyPaste comes to Steam?
+      </p>
+      <h2 style="font-size: 1.8rem; font-weight: 700; margin-top: 8px;" class="highlight-blue">
+        What's your name?
+      </h2>
+
+      <form class="form-group" id="name-form" onsubmit="event.preventDefault(); submitName();">
+        <input 
+          type="text" 
+          id="name-input" 
+          class="pixel-input" 
+          placeholder="Your name..." 
+          required 
+          autocomplete="given-name" 
+        />
+        <div class="error-msg" id="name-error">Please enter your name</div>
+        <button type="submit" class="pixel-btn pixel-btn-glow">
+          CONTINUE &rarr;
+        </button>
+      </form>
+    </section>
+
+    <section class="screen" id="screen-6">
+      <h2 id="greeting-title" style="font-size: 1.8rem; font-weight: 700;" class="highlight-blue">
+        Nice to meet you! 👋
+      </h2>
+      <p style="font-size: 1.2rem; color: #ffffff; font-weight: 700; margin-top: 8px;">
+        Where should we send the launch signal?
+      </p>
+
+      <form class="form-group" id="email-form" onsubmit="event.preventDefault(); submitEmail();">
+        <input 
+          type="email" 
+          id="email-input" 
+          class="pixel-input" 
+          placeholder="your@email.com" 
+          required 
+          autocomplete="email" 
+        />
+        <div class="error-msg" id="email-error">Please enter a valid email</div>
+        <button type="submit" id="submit-btn" class="pixel-btn pixel-btn-glow">
+          SIGN ME UP 🚀
+        </button>
+      </form>
+    </section>
+
+    <section class="screen" id="screen-7">
+      <div style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--color-light-blue); margin-bottom: 12px; letter-spacing: 1px;">
+        TRANSMISSION RECEIVED. 📡
+      </div>
+      
+      <div class="achievement-card reveal-item visible">
+        <div class="badge-title" style="color: #ffd700;">🏆 ACHIEVEMENT UNLOCKED</div>
+        <div class="badge-subtitle" style="font-family: var(--font-pixel); font-size: 1.1rem; margin-top: 6px;">
+          FIRST CONTACT
+        </div>
+      </div>
+
+      <p style="font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">
+        You're officially on the list.
+      </p>
+      <p style="font-size: 1.1rem; color: var(--color-muted-slate); font-weight: 500;">
+        We'll let you know when CopyPaste is ready.<span class="pulse-dot"></span>
+      </p>
+    </section>
+
+    <section class="screen" id="screen-8">
+      <p style="font-size: 1.2rem; color: var(--color-light-blue); font-weight: 700; margin-bottom: 8px;">
+        One last thing... 👀
+      </p>
+      <h2 style="font-size: 1.7rem; font-weight: 700; margin-bottom: 28px;">
+        Want to see what Kajo Games is building?
+      </h2>
+
+      <a id="kajo-btn" href="#" target="_blank" rel="noopener noreferrer" class="pixel-btn pixel-btn-glow">
+        FOLLOW KAJO GAMES &rarr;
+      </a>
+    </section>
+  </main>
+
+  <script>
+    const KAJO_LINKTREE_URL = "YOUR_LINKTREE_URL_HERE";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq5P39vcMqjxRqVHYCPX3Dpb7HscBtCDTaWWZdobcgwP14ksbb2JwUmkp_GsenKVG2/exec";
+
+    const userData = {
+      name: "",
+      email: ""
+    };
+
+    let introTimeouts = [];
+    let isIntroSkipped = false;
+
+    function showScreen(screenId) {
+      const activeScreen = document.querySelector('.screen.active');
+      const targetScreen = document.getElementById(screenId);
+
+      if (activeScreen) {
+        activeScreen.classList.remove('active');
+        activeScreen.classList.add('exit');
+        setTimeout(() => {
+          activeScreen.classList.remove('exit');
+        }, 500);
+      }
+
+      setTimeout(() => {
+        targetScreen.classList.add('active');
+      }, activeScreen ? 250 : 0);
+    }
+
+    function revealElement(elementId, delay) {
+      const tid = setTimeout(() => {
+        const el = document.getElementById(elementId);
+        if (el) el.classList.add('visible');
+      }, delay);
+      introTimeouts.push(tid);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const kajoBtn = document.getElementById('kajo-btn');
+      if (kajoBtn) kajoBtn.href = KAJO_LINKTREE_URL;
+
+      // Check if user already submitted before on this device
+      if (localStorage.getItem('copypaste_submitted') === 'true') {
+        skipToIntroComplete();
+        return;
+      }
+
+      // Start Intro Sequence
+      showScreen('screen-1');
+      revealElement('s1-tagline', 600);
+
+      const t1 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-2');
+        revealElement('s2-line1', 200);
+        revealElement('s2-line2', 1200);
+        revealElement('s2-line3', 2400);
+      }, 3400);
+      introTimeouts.push(t1);
+
+      const t2 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-3');
+        revealElement('s3-box1', 200);
+        revealElement('s3-box2', 900);
+        revealElement('s3-box3', 1600);
+        revealElement('s3-caption', 2300);
+      }, 7200);
+      introTimeouts.push(t2);
+
+      const t3 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-4');
+        revealElement('s4-card', 200);
+        revealElement('s4-line1', 900);
+        revealElement('s4-line2', 1700);
+      }, 11200);
+      introTimeouts.push(t3);
+
+      const t4 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        skipToIntroComplete();
+      }, 15200);
+      introTimeouts.push(t4);
+
+      // Listen for double-click (desktop) or double-tap (mobile) during intro
+      window.addEventListener('dblclick', triggerSkipIntro);
+      window.addEventListener('touchstart', handleTouchDoubleTap);
+    });
+
+    let lastTouchTime = 0;
+    function handleTouchDoubleTap(e) {
+      if (['screen-5', 'screen-6', 'screen-7', 'screen-8'].includes(document.querySelector('.screen.active')?.id)) {
+        return;
+      }
+
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTouchTime;
+      
+      if (tapLength < 500 && tapLength > 0) {
+        e.preventDefault();
+        triggerSkipIntro();
+      }
+      lastTouchTime = currentTime;
+    }
+
+    function triggerSkipIntro() {
+      if (isIntroSkipped) return;
+      isIntroSkipped = true;
+
+      introTimeouts.forEach(tid => clearTimeout(tid));
+      
+      window.removeEventListener('dblclick', triggerSkipIntro);
+      window.removeEventListener('touchstart', handleTouchDoubleTap);
+
+      skipToIntroComplete();
+    }
+
+    function skipToIntroComplete() {
+      isIntroSkipped = true;
+      const skipPrompt = document.getElementById('skip-prompt');
+      if (skipPrompt) skipPrompt.classList.add('hidden');
+
+      window.removeEventListener('dblclick', triggerSkipIntro);
+      window.removeEventListener('touchstart', handleTouchDoubleTap);
+
+      showScreen('screen-5');
+    }
+
+    function submitName() {
+      const nameInput = document.getElementById('name-input');
+      const nameError = document.getElementById('name-error');
+      const val = nameInput.value.trim();
+
+      if (!val) {
+        nameError.classList.add('visible');
+        return;
+      }
+      nameError.classList.remove('visible');
+
+      userData.name = val;
+      
+      const greeting = document.getElementById('greeting-title');
+      greeting.textContent = `Nice to meet you, ${userData.name}. 👋`;
+
+      showScreen('screen-6');
+    }
+
+    function submitEmail() {
+      const emailInput = document.getElementById('email-input');
+      const emailError = document.getElementById('email-error');
+      const val = emailInput.value.trim().toLowerCase();
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!val || !emailRegex.test(val)) {
+        emailError.classList.add('visible');
+        return;
+      }
+
+      const storedEmails = JSON.parse(localStorage.getItem('copypaste_emails') || '[]');
+      if (storedEmails.includes(val)) {
+        emailError.textContent = "You've already submitted and will be notified!";
+        emailError.classList.add('visible');
+        return;
+      }
+
+      emailError.classList.remove('visible');
+      userData.email = val;
+
+      storedEmails.push(val);
+      localStorage.setItem('copypaste_emails', JSON.stringify(storedEmails));
+      localStorage.setItem('copypaste_submitted', 'true');
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) submitBtn.disabled = true;
+
+      handleSignup(userData.name, userData.email);
+
+      showScreen('screen-7');
+
+      setTimeout(() => {
+        showScreen('screen-8');
+      }, 3600);
+    }
+
+    function handleSignup(name, email) {
+      if (!GOOGLE_SCRIPT_URL) {
+        console.warn("Google Script URL is not configured yet.");
+        return;
+      }
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, email: email })
+      })
+      .then(() => {
+        console.log("Data successfully transmitted to Google Sheet.");
+      })
+      .catch((error) => {
+        console.error("Error sending to Google Sheet:", error);
+      });
+    }
+  </script>
+</body>
+</html>
