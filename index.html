@@ -507,4 +507,245 @@
         <button type="submit" id="submit-btn" class="pixel-btn pixel-btn-glow">
           SIGN ME UP 🚀
         </button>
-      </form
+      </form>
+    </section>
+
+    <section class="screen" id="screen-7">
+      <div style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--color-light-blue); margin-bottom: 12px; letter-spacing: 1px;">
+        TRANSMISSION RECEIVED. 📡
+      </div>
+      
+      <div class="achievement-card reveal-item visible">
+        <div class="badge-title" style="color: #ffd700;">🏆 ACHIEVEMENT UNLOCKED</div>
+        <div class="badge-subtitle" style="font-family: var(--font-pixel); font-size: 1.1rem; margin-top: 6px;">
+          FIRST CONTACT
+        </div>
+      </div>
+
+      <p style="font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">
+        You're officially on the list.
+      </p>
+      <p style="font-size: 1.1rem; color: var(--color-muted-slate); font-weight: 500;">
+        We'll let you know when CopyPaste is ready.<span class="pulse-dot"></span>
+      </p>
+    </section>
+
+    <section class="screen" id="screen-8">
+      <p style="font-size: 1.2rem; color: var(--color-light-blue); font-weight: 700; margin-bottom: 8px;">
+        One last thing... 👀
+      </p>
+      <h2 style="font-size: 1.7rem; font-weight: 700; margin-bottom: 28px;">
+        Want to see what Kajo Games is building?
+      </h2>
+
+      <a id="kajo-btn" href="#" target="_blank" rel="noopener noreferrer" class="pixel-btn pixel-btn-glow">
+        FOLLOW KAJO GAMES &rarr;
+      </a>
+    </section>
+  </main>
+
+  <script>
+    const KAJO_LINKTREE_URL = "YOUR_LINKTREE_URL_HERE";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq5P39vcMqjxRqVHYCPX3Dpb7HscBtCDTaWWZdobcgwP14ksbb2JwUmkp_GsenKVG2/exec";
+
+    const userData = {
+      name: "",
+      email: ""
+    };
+
+    let introTimeouts = [];
+    let isIntroSkipped = false;
+
+    function showScreen(screenId) {
+      const activeScreen = document.querySelector('.screen.active');
+      const targetScreen = document.getElementById(screenId);
+
+      if (activeScreen) {
+        activeScreen.classList.remove('active');
+        activeScreen.classList.add('exit');
+        setTimeout(() => {
+          activeScreen.classList.remove('exit');
+        }, 500);
+      }
+
+      setTimeout(() => {
+        targetScreen.classList.add('active');
+      }, activeScreen ? 250 : 0);
+    }
+
+    function revealElement(elementId, delay) {
+      const tid = setTimeout(() => {
+        const el = document.getElementById(elementId);
+        if (el) el.classList.add('visible');
+      }, delay);
+      introTimeouts.push(tid);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const kajoBtn = document.getElementById('kajo-btn');
+      if (kajoBtn) kajoBtn.href = KAJO_LINKTREE_URL;
+
+      // Start Intro Sequence Every Time
+      showScreen('screen-1');
+      revealElement('s1-tagline', 600);
+
+      const t1 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-2');
+        revealElement('s2-line1', 200);
+        revealElement('s2-line2', 1200);
+        revealElement('s2-line3', 2400);
+      }, 3400);
+      introTimeouts.push(t1);
+
+      const t2 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-3');
+        revealElement('s3-box1', 200);
+        revealElement('s3-box2', 900);
+        revealElement('s3-box3', 1600);
+        revealElement('s3-caption', 2300);
+      }, 7200);
+      introTimeouts.push(t2);
+
+      const t3 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        showScreen('screen-4');
+        revealElement('s4-card', 200);
+        revealElement('s4-line1', 900);
+        revealElement('s4-line2', 1700);
+      }, 11200);
+      introTimeouts.push(t3);
+
+      const t4 = setTimeout(() => {
+        if (isIntroSkipped) return;
+        skipToIntroComplete();
+      }, 15200);
+      introTimeouts.push(t4);
+
+      // Listen for double-click (desktop) or double-tap (mobile) during intro
+      window.addEventListener('dblclick', triggerSkipIntro);
+      window.addEventListener('touchstart', handleTouchDoubleTap);
+    });
+
+    let lastTouchTime = 0;
+    function handleTouchDoubleTap(e) {
+      if (isIntroSkipped) return;
+
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTouchTime;
+      
+      if (tapLength < 500 && tapLength > 0) {
+        e.preventDefault();
+        triggerSkipIntro();
+      }
+      lastTouchTime = currentTime;
+    }
+
+    function triggerSkipIntro() {
+      if (isIntroSkipped) return;
+      isIntroSkipped = true;
+
+      introTimeouts.forEach(tid => clearTimeout(tid));
+      
+      window.removeEventListener('dblclick', triggerSkipIntro);
+      window.removeEventListener('touchstart', handleTouchDoubleTap);
+
+      skipToIntroComplete();
+    }
+
+    function skipToIntroComplete() {
+      isIntroSkipped = true;
+      
+      // Instantly remove and hide the skip prompt permanently
+      const skipPrompt = document.getElementById('skip-prompt');
+      if (skipPrompt) {
+        skipPrompt.classList.add('hidden');
+        skipPrompt.remove();
+      }
+
+      window.removeEventListener('dblclick', triggerSkipIntro);
+      window.removeEventListener('touchstart', handleTouchDoubleTap);
+
+      showScreen('screen-5');
+    }
+
+    function submitName() {
+      const nameInput = document.getElementById('name-input');
+      const nameError = document.getElementById('name-error');
+      const val = nameInput.value.trim();
+
+      if (!val) {
+        nameError.classList.add('visible');
+        return;
+      }
+      nameError.classList.remove('visible');
+
+      userData.name = val;
+      
+      const greeting = document.getElementById('greeting-title');
+      greeting.textContent = `Nice to meet you, ${userData.name}. 👋`;
+
+      showScreen('screen-6');
+    }
+
+    function submitEmail() {
+      const emailInput = document.getElementById('email-input');
+      const emailError = document.getElementById('email-error');
+      const val = emailInput.value.trim().toLowerCase();
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!val || !emailRegex.test(val)) {
+        emailError.classList.add('visible');
+        return;
+      }
+
+      const storedEmails = JSON.parse(localStorage.getItem('copypaste_emails') || '[]');
+      if (storedEmails.includes(val)) {
+        emailError.textContent = "You've already submitted and will be notified!";
+        emailError.classList.add('visible');
+        return;
+      }
+
+      emailError.classList.remove('visible');
+      userData.email = val;
+
+      storedEmails.push(val);
+      localStorage.setItem('copypaste_emails', JSON.stringify(storedEmails));
+      localStorage.setItem('copypaste_submitted', 'true');
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) submitBtn.disabled = true;
+
+      handleSignup(userData.name, userData.email);
+
+      showScreen('screen-7');
+
+      setTimeout(() => {
+        showScreen('screen-8');
+      }, 3600);
+    }
+
+    function handleSignup(name, email) {
+      if (!GOOGLE_SCRIPT_URL) {
+        console.warn("Google Script URL is not configured yet.");
+        return;
+      }
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, email: email })
+      })
+      .then(() => {
+        console.log("Data successfully transmitted to Google Sheet.");
+      })
+      .catch((error) => {
+        console.error("Error sending to Google Sheet:", error);
+      });
+    }
+  </script>
+</body>
+</html>
