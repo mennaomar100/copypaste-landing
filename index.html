@@ -301,4 +301,210 @@
     }
 
     .pixel-btn:active {
-      transform
+      transform: translateY(2px);
+      box-shadow: inset -2px -2px 0px rgba(0,0,0,0.4), inset 2px 2px 0px rgba(255,255,255,0.2);
+      background: var(--color-dark-slate);
+    }
+
+    .pixel-btn-glow {
+      border: 1px solid var(--color-light-blue);
+      box-shadow: 0 0 15px rgba(31, 94, 128, 0.6);
+    }
+
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 0.95rem;
+      font-weight: 700;
+      height: 18px;
+      margin-top: -8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .error-msg.visible {
+      opacity: 1;
+    }
+
+    /* Skip Prompt Styling */
+    #skip-prompt {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-pixel);
+      font-size: 0.6rem;
+      color: var(--color-muted-slate);
+      letter-spacing: 1px;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.8;
+      animation: blinkSkip 1.5s infinite ease-in-out;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
+    }
+    #skip-prompt.hidden {
+      opacity: 0;
+      display: none;
+    }
+
+    @keyframes blinkSkip {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.9; }
+    }
+
+    .glitch {
+      position: relative;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      clip: rect(0, 0, 0, 0);
+    }
+    .glitch::before {
+      left: -2px;
+      text-shadow: 2px 0 var(--color-deep-teal);
+      animation: glitch-anim 3s infinite linear alternate-reverse;
+    }
+    .glitch::after {
+      left: 2px;
+      text-shadow: -2px 0 var(--color-light-blue);
+      animation: glitch-anim2 2s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch-anim {
+      0% { clip: rect(12px, 9999px, 30px, 0); }
+      20% { clip: rect(40px, 9999px, 10px, 0); }
+      40% { clip: rect(25px, 9999px, 50px, 0); }
+      60% { clip: rect(5px, 9999px, 15px, 0); }
+      80% { clip: rect(35px, 9999px, 20px, 0); }
+      100% { clip: rect(18px, 9999px, 45px, 0); }
+    }
+    @keyframes glitch-anim2 {
+      0% { clip: rect(32px, 9999px, 5px, 0); }
+      25% { clip: rect(15px, 9999px, 35px, 0); }
+      50% { clip: rect(45px, 9999px, 12px, 0); }
+      75% { clip: rect(8px, 9999px, 28px, 0); }
+      100% { clip: rect(22px, 9999px, 40px, 0); }
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-light-blue);
+      border-radius: 50%;
+      margin-left: 6px;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- Skip Prompt Indicator -->
+  <div id="skip-prompt">[Double-Tap To Skip]</div>
+
+  <main id="app">
+    <div class="frame-corner top-left"></div>
+    <div class="frame-corner top-right"></div>
+    <div class="frame-corner bottom-left"></div>
+    <div class="frame-corner bottom-right"></div>
+
+    <section class="screen" id="screen-1">
+      <h1 class="game-title glitch" data-text="COPYPASTE">COPYPASTE</h1>
+      <p class="sub-tagline reveal-item" id="s1-tagline">
+        Use it. Outsmart it. Never touch it.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-2">
+      <p class="impact-text reveal-item" id="s2-line1">
+        EVERY 10 SECONDS...
+      </p>
+      <p class="impact-text highlight-blue reveal-item" id="s2-line2" style="margin: 18px 0;">
+        A COPY OF YOU APPEARS.
+      </p>
+      <p class="impact-text reveal-item" id="s2-line3" style="font-size: 1.25rem; color: var(--color-muted-slate);">
+        AND DOES EXACTLY WHAT YOU DID BEFORE.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-3">
+      <div class="mechanic-box reveal-item" id="s3-box1">RECORD.</div>
+      <div class="mechanic-box reveal-item" id="s3-box2">REPLAY.</div>
+      <div class="mechanic-box reveal-item" id="s3-box3" style="border-color: var(--color-deep-teal);">ADAPT.</div>
+      <p class="reveal-item" id="s3-caption" style="margin-top: 20px; font-size: 1.25rem; font-weight: 700; color: var(--color-light-blue);">
+        Your past actions become part of the puzzle.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-4">
+      <div class="achievement-card reveal-item" id="s4-card">
+        <div class="trophy-icon">🏆</div>
+        <div class="badge-title">OFFICIAL SELECTION</div>
+        <div class="badge-subtitle">2ND PLACE WINNER</div>
+      </div>
+      <p class="reveal-item" id="s4-line1" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">
+        We built CopyPaste around this mechanic.
+      </p>
+      <p class="reveal-item highlight-blue" id="s4-line2" style="font-size: 1.1rem; font-weight: 700;">
+        12 levels. One very stubborn clone.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-5">
+      <p style="font-size: 1.1rem; color: var(--color-muted-slate); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+        Want to know when CopyPaste comes to Steam?
+      </p>
+      <h2 style="font-size: 1.8rem; font-weight: 700; margin-top: 8px;" class="highlight-blue">
+        What's your name?
+      </h2>
+
+      <form class="form-group" id="name-form" onsubmit="event.preventDefault(); submitName();">
+        <input 
+          type="text" 
+          id="name-input" 
+          class="pixel-input" 
+          placeholder="Your name..." 
+          required 
+          autocomplete="given-name" 
+        />
+        <div class="error-msg" id="name-error">Please enter your name</div>
+        <button type="submit" class="pixel-btn pixel-btn-glow">
+          CONTINUE &rarr;
+        </button>
+      </form>
+    </section>
+
+    <section class="screen" id="screen-6">
+      <h2 id="greeting-title" style="font-size: 1.8rem; font-weight: 700;" class="highlight-blue">
+        Nice to meet you! 👋
+      </h2>
+      <p style="font-size: 1.2rem; color: #ffffff; font-weight: 700; margin-top: 8px;">
+        Where should we send the launch signal?
+      </p>
+
+      <form class="form-group" id="email-form" onsubmit="event.preventDefault(); submitEmail();">
+        <input 
+          type="email" 
+          id="email-input" 
+          class="pixel-input" 
+          placeholder="your@email.com" 
+          required 
+          autocomplete="email" 
+        />
+        <div class="error-msg" id="email-error">Please enter a valid email</div>
+        <button type="submit" id="submit-btn" class="pixel-btn pixel-btn-glow">
+          SIGN ME UP 🚀
+        </button>
+      </form
