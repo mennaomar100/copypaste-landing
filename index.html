@@ -689,18 +689,21 @@
       showScreen('screen-6');
     }
 
-    function submitEmail() {
+    async function submitEmail() {
       const emailInput = document.getElementById('email-input');
       const emailError = document.getElementById('email-error');
+      const submitBtn = document.getElementById('submit-btn');
       const val = emailInput.value.trim().toLowerCase();
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       if (!val || !emailRegex.test(val)) {
+        emailError.textContent = "Please enter a valid email";
         emailError.classList.add('visible');
         return;
       }
 
+      // Check local storage first for immediate client feedback
       const storedEmails = JSON.parse(localStorage.getItem('copypaste_emails') || '[]');
       if (storedEmails.includes(val)) {
         emailError.textContent = "You've already submitted and will be notified!";
@@ -711,14 +714,22 @@
       emailError.classList.remove('visible');
       userData.email = val;
 
+      if (submitBtn) submitBtn.disabled = true;
+
+      // Send to Google Sheets and verify duplicate status
+      const result = await handleSignup(userData.name, userData.email);
+
+      if (result === 'duplicate') {
+        emailError.textContent = "You've already submitted and will be notified!";
+        emailError.classList.add('visible');
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      // Record locally if success
       storedEmails.push(val);
       localStorage.setItem('copypaste_emails', JSON.stringify(storedEmails));
       localStorage.setItem('copypaste_submitted', 'true');
-
-      const submitBtn = document.getElementById('submit-btn');
-      if (submitBtn) submitBtn.disabled = true;
-
-      handleSignup(userData.name, userData.email);
 
       showScreen('screen-7');
 
@@ -727,24 +738,25 @@
       }, 3600);
     }
 
-    function handleSignup(name, email) {
+    async function handleSignup(name, email) {
       if (!GOOGLE_SCRIPT_URL) {
         console.warn("Google Script URL is not configured yet.");
-        return;
+        return 'error';
       }
 
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, email: email })
-      })
-      .then(() => {
-        console.log("Data successfully transmitted to Google Sheet.");
-      })
-      .catch((error) => {
-        console.error("Error sending to Google Sheet:", error);
-      });
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ name: name, email: email })
+        });
+        
+        const data = await response.json();
+        return data.result; // 'success' or 'duplicate'
+      } catch (error) {
+        console.error("Error communicating with Google Sheet:", error);
+        return 'success'; // Fallback to allow flow if fetch fails
+      }
     }
   </script>
 </body>
