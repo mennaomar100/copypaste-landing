@@ -689,7 +689,7 @@
       showScreen('screen-6');
     }
 
-    async function submitEmail() {
+   async function submitEmail() {
       const emailInput = document.getElementById('email-input');
       const emailError = document.getElementById('email-error');
       const submitBtn = document.getElementById('submit-btn');
@@ -703,7 +703,7 @@
         return;
       }
 
-      // Check local storage first for immediate client feedback
+      // Check local storage first
       const storedEmails = JSON.parse(localStorage.getItem('copypaste_emails') || '[]');
       if (storedEmails.includes(val)) {
         emailError.textContent = "You've already submitted and will be notified!";
@@ -714,7 +714,11 @@
       emailError.classList.remove('visible');
       userData.email = val;
 
-      if (submitBtn) submitBtn.disabled = true;
+      // Show loading state during the Google Sheet check
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "CHECKING... ⏳";
+      }
 
       // Send to Google Sheets and verify duplicate status
       const result = await handleSignup(userData.name, userData.email);
@@ -722,7 +726,10 @@
       if (result === 'duplicate') {
         emailError.textContent = "You've already submitted and will be notified!";
         emailError.classList.add('visible');
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "SIGN ME UP 🚀";
+        }
         return;
       }
 
@@ -737,7 +744,6 @@
         showScreen('screen-8');
       }, 3600);
     }
-
     async function handleSignup(name, email) {
       if (!GOOGLE_SCRIPT_URL) {
         console.warn("Google Script URL is not configured yet.");
