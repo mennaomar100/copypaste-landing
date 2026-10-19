@@ -581,60 +581,60 @@
       introTimeouts.push(tid);
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    // Force start intro sequence immediately when page loads
+    window.addEventListener("DOMContentLoaded", () => {
       const kajoBtn = document.getElementById('kajo-btn');
       if (kajoBtn) kajoBtn.href = KAJO_LINKTREE_URL;
 
-      // Start Intro Sequence Every Time
+      // Screen 1
       showScreen('screen-1');
       revealElement('s1-tagline', 600);
 
-      const t1 = setTimeout(() => {
+      // Screen 2
+      introTimeouts.push(setTimeout(() => {
         if (isIntroSkipped) return;
         showScreen('screen-2');
         revealElement('s2-line1', 200);
         revealElement('s2-line2', 1200);
         revealElement('s2-line3', 2400);
-      }, 3400);
-      introTimeouts.push(t1);
+      }, 3400));
 
-      const t2 = setTimeout(() => {
+      // Screen 3
+      introTimeouts.push(setTimeout(() => {
         if (isIntroSkipped) return;
         showScreen('screen-3');
         revealElement('s3-box1', 200);
         revealElement('s3-box2', 900);
         revealElement('s3-box3', 1600);
         revealElement('s3-caption', 2300);
-      }, 7200);
-      introTimeouts.push(t2);
+      }, 7200));
 
-      const t3 = setTimeout(() => {
+      // Screen 4
+      introTimeouts.push(setTimeout(() => {
         if (isIntroSkipped) return;
         showScreen('screen-4');
         revealElement('s4-card', 200);
         revealElement('s4-line1', 900);
         revealElement('s4-line2', 1700);
-      }, 11200);
-      introTimeouts.push(t3);
+      }, 11200));
 
-      const t4 = setTimeout(() => {
+      // End Intro -> Go to Screen 5
+      introTimeouts.push(setTimeout(() => {
         if (isIntroSkipped) return;
         skipToIntroComplete();
-      }, 15200);
-      introTimeouts.push(t4);
+      }, 15200));
 
-      // Listen for double-click (desktop) or double-tap (mobile) during intro
+      // Listen for skip inputs
       window.addEventListener('dblclick', triggerSkipIntro);
       window.addEventListener('touchstart', handleTouchDoubleTap);
+      window.addEventListener('keydown', handleDesktopSkip);
     });
 
     let lastTouchTime = 0;
     function handleTouchDoubleTap(e) {
       if (isIntroSkipped) return;
-
       const currentTime = new Date().getTime();
       const tapLength = currentTime - lastTouchTime;
-      
       if (tapLength < 500 && tapLength > 0) {
         e.preventDefault();
         triggerSkipIntro();
@@ -642,110 +642,14 @@
       lastTouchTime = currentTime;
     }
 
+    function handleDesktopSkip(e) {
+      if (isIntroSkipped) return;
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        triggerSkipIntro();
+      }
+    }
+
     function triggerSkipIntro() {
       if (isIntroSkipped) return;
-      isIntroSkipped = true;
-
-      introTimeouts.forEach(tid => clearTimeout(tid));
-      
-      window.removeEventListener('dblclick', triggerSkipIntro);
-      window.removeEventListener('touchstart', handleTouchDoubleTap);
-
-      skipToIntroComplete();
-    }
-
-    function skipToIntroComplete() {
-      isIntroSkipped = true;
-      
-      // Instantly remove and hide the skip prompt permanently
-      const skipPrompt = document.getElementById('skip-prompt');
-      if (skipPrompt) {
-        skipPrompt.classList.add('hidden');
-        skipPrompt.remove();
-      }
-
-      window.removeEventListener('dblclick', triggerSkipIntro);
-      window.removeEventListener('touchstart', handleTouchDoubleTap);
-
-      showScreen('screen-5');
-    }
-
-    function submitName() {
-      const nameInput = document.getElementById('name-input');
-      const nameError = document.getElementById('name-error');
-      const val = nameInput.value.trim();
-
-      if (!val) {
-        nameError.classList.add('visible');
-        return;
-      }
-      nameError.classList.remove('visible');
-
-      userData.name = val;
-      
-      const greeting = document.getElementById('greeting-title');
-      greeting.textContent = `Nice to meet you, ${userData.name}. 👋`;
-
-      showScreen('screen-6');
-    }
-
-    function submitEmail() {
-      const emailInput = document.getElementById('email-input');
-      const emailError = document.getElementById('email-error');
-      const val = emailInput.value.trim().toLowerCase();
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!val || !emailRegex.test(val)) {
-        emailError.classList.add('visible');
-        return;
-      }
-
-      const storedEmails = JSON.parse(localStorage.getItem('copypaste_emails') || '[]');
-      if (storedEmails.includes(val)) {
-        emailError.textContent = "You've already submitted and will be notified!";
-        emailError.classList.add('visible');
-        return;
-      }
-
-      emailError.classList.remove('visible');
-      userData.email = val;
-
-      storedEmails.push(val);
-      localStorage.setItem('copypaste_emails', JSON.stringify(storedEmails));
-      localStorage.setItem('copypaste_submitted', 'true');
-
-      const submitBtn = document.getElementById('submit-btn');
-      if (submitBtn) submitBtn.disabled = true;
-
-      handleSignup(userData.name, userData.email);
-
-      showScreen('screen-7');
-
-      setTimeout(() => {
-        showScreen('screen-8');
-      }, 3600);
-    }
-
-    function handleSignup(name, email) {
-      if (!GOOGLE_SCRIPT_URL) {
-        console.warn("Google Script URL is not configured yet.");
-        return;
-      }
-
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, email: email })
-      })
-      .then(() => {
-        console.log("Data successfully transmitted to Google Sheet.");
-      })
-      .catch((error) => {
-        console.error("Error sending to Google Sheet:", error);
-      });
-    }
-  </script>
-</body>
-</html>
+      isIntroSki
